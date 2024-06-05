@@ -1,153 +1,144 @@
+
 <?php
-// Uključivanje datoteke simple_html_dom.php koja omogućava manipulaciju HTML sadržajem.
 include("simple_html_dom.php");
 
-// Definiranje sučelja iRadovi s potrebnim metodama.
 interface iRadovi
 {
-    public function create($data); // Metoda za kreiranje objekta radova na temelju predanih podataka.
-    public function save(); // Metoda za spremanje podataka u bazu.
-    public function read(); // Metoda za čitanje podataka iz baze.
+    public function create($data);
+    public function save();
+    public function read();
 }
 
-// Definicija klase DiplomskiRadovi koja implementira sučelje iRadovi.
 class DiplomskiRadovi implements iRadovi
 {
-    // Privatni članovi klase koji čuvaju podatke o radu.
-    private $naziv;
-    private $tekst;
-    private $link;
-    private $oib;
-
-    // Konstruktor klase koji poziva metodu create ako su predani podaci.
-    public function __construct($data = null)
-    {
-        if ($data !== null) {
-            $this->create($data);
+    private $naziv_rada=NULL;
+    private $tekst_rada=NULL;
+    private $link_rada=NULL;
+    private $oib_tvrtke=NULL;
+    function __construct($data)
+        {
+            if($data !== NULL)
+                $this->create($data);
         }
-    }
-
-    // Metoda za postavljanje podataka rada na temelju predanih podataka.
     public function create($data)
     {
-        $this->naziv = $data['naziv_rada'];
-        $this->tekst = $data['tekst_rada'];
-        $this->link = $data['link_rada'];
-        $this->oib = $data['oib_tvrtke'];
+        $this->naziv_rada = $data['naziv_rada'];
+        $this->tekst_rada = $data['tekst_rada'];
+        $this->link_rada = $data['link_rada'];
+        $this->oib_tvrtke = $data['oib_tvrtke'];
     }
-
-    // Metoda za čitanje podataka iz baze i ispis na ekran.
+    //Funkcija read koja se spaja na bazu podataka i dohvaća radove iz tablice diplomski_radovi i ispisuje na ekran
     public function read()
     {
-        // Uspostava veze s bazom podataka pozivom privatne metode connectToDatabase().
-        $connection = $this->connectToDatabase();
-
-        // SQL upit za dohvaćanje svih podataka iz tablice `diplomski_radovi`.
-        $sqlQuery = "SELECT * FROM `diplomski_radovi`";
-        $result = mysqli_query($connection, $sqlQuery);
-
-        // Provjera je li rezultat upita vraća podatke.
-        if (mysqli_num_rows($result) > 0) {
-            // Prolazak kroz rezultate i ispisivanje svakog retka na ekran.
-            while ($row = mysqli_fetch_assoc($result)) {
-                foreach ($row as $key => $value) {
-                    echo "<br> {$key} : {$value}";
+        //Parametri za povezivanje na bazu podataka radovi
+        $servername='localhost';
+        $username= 'root';
+        $password= '';
+        $dbname='radovi';
+        //Povezivanje na bazu
+        $connection=mysqli_connect($servername,$username, $password, $dbname);
+        //Ako je povezivanje uspjesno
+        if($connection)
+        {
+            //Postavljanje upita
+            $sqlQuery="SELECT * from `diplomski_radovi`";
+            //Izvršavanje upita
+            $result=mysqli_query($connection,$sqlQuery);
+            //Ako ima rezultata ispiši za svaki redak njegove vrijednosti
+            if(mysqli_num_rows($result)>0)
+            {
+                while($row=mysqli_fetch_assoc($result))
+                {
+                    foreach($row as $key=>$value)
+                    {
+                        echo"<br> {$key} : {$value}";
+                    }
                 }
             }
-        } else {
-            // Ispis poruke ako tablica nema podataka.
-            echo "Empty table";
+            else
+            {
+                echo"Empty table";
+            }
+        }
+        else
+        {
+            die("Connection failed". mysqli_connect_error());
         }
 
-        // Zatvaranje veze s bazom podataka.
+        
         mysqli_close($connection);
     }
 
-    // Metoda za spremanje podataka rada u bazu.
     public function save()
     {
-        // Uspostava veze s bazom podataka pozivom privatne metode connectToDatabase().
-        $connection = $this->connectToDatabase();
+        $servername='localhost';
+        $username= 'root';
+        $password= '';
+        $dbname='radovi';
 
-        // Dobivanje vrijednosti svojstava objekta za spremanje u bazu.
-        $naziv = $this->naziv;
-        $tekst = $this->tekst;
-        $link = $this->link;
-        $oib = $this->oib;
-
-        // SQL upit za unos novog zapisa u tablicu `diplomski_radovi`.
-        $sqlQuery = "INSERT INTO `diplomski_radovi` (`naziv_rada`, `tekst_rada`, `link_rada`, `oib_tvrtke`) 
-                     VALUES ('$naziv', '$tekst', '$link', '$oib')";
-
-        // Izvršavanje SQL upita.
-        if (mysqli_query($connection, $sqlQuery)) {
-            // Ako je unos uspješan, ponovno čitanje podataka iz baze i ispis na ekran.
-            $this->read();
+        $connection=mysqli_connect($servername,$username, $password, $dbname);
+        //Varijable $naziv, $tekst, $link, i $oib se koriste za spremanje vrijednosti članova objekta $this.
+        $naziv =$this->naziv_rada;
+        $tekst = $this->tekst_rada;
+        $link = $this->link_rada;
+        $oib = $this->oib_tvrtke;
+        //Ovdje  spremamo u tablicu diplomski_radovi
+        if($connection)
+        {
+            $sqlQuery="INSERT INTO `diplomski_radovi` (`naziv_rada`,`tekst_rada`,`link_rada`,`oib_tvrtke`) VALUES('$naziv','$tekst','$link','$oib')";
+            if(mysqli_query($connection,$sqlQuery))
+            {
+                $this->read();
+            }
+        }
+        else
+        {
+            die("Connection failed". mysqli_connect_error());
         }
 
-        // Zatvaranje veze s bazom podataka.
         mysqli_close($connection);
     }
-
-    // Privatna metoda za uspostavu veze s bazom podataka.
-    private function connectToDatabase()
-    {
-        // Postavljanje parametara za vezu s bazom podataka.
-        $servername = 'localhost';
-        $username = 'root';
-        $password = '';
-        $dbname = 'radovi';
-
-        // Uspostava veze s bazom podataka.
-        $connection = mysqli_connect($servername, $username, $password, $dbname);
-
-        // Provjera uspješnosti veze.
-        if (!$connection) {
-            // U slučaju neuspješne veze, ispisivanje poruke o grešci i prekid izvršavanja.
-            die("Connection failed: " . mysqli_connect_error());
-        }
-
-        // Vraćanje uspostavljene veze.
-        return $connection;
-    }
 }
-
-// Definicija broja stranice i URL-a za dohvat završnih radova.
+//Korištenjm cUrl-a pristupamo stranici 
 $page_num = 3;
+
 $url = "http://stup.ferit.hr/index.php/zavrsni-radovi/page/$page_num";
+//$curl = curl_init($url);
 
-// Dohvaćanje HTML sadržaja web stranice.
-$html = file_get_html($url);
+$ip_address = gethostbyname($url);
+if(!socket_connect($sock , $ip_address , 80))
+{
+    $errorcode = socket_last_error();
+    $errormsg = socket_strerror($errorcode);
+     
+    die("Ne možemo se spojiti: [$errorcode] $errormsg \n");
+}
+ 
+echo "Spojili smo se \n";
+ 
 
-// Prolazak kroz svaki članak na web stranici.
-foreach ($html->find('article') as $article) {
-    // Dohvaćanje slike i njenog izvora (OIB).
-    $image = $article->find('ul.slides li div img')[0];
-    $image_source = $image->src;
+$read = file_get_html($url);
+//Pronalazimo article i prolaizmo kroz svaki artikl kako bi pronašli elemente img za oib, naziv rada, tekst rada i link rada
+foreach ($read->find('article') as $article) 
+{
+    $image = $article->find('ul.slides li div img')[0]; //Pronalazimo slku
+    $image_source = $image->src;//Uzimamo njen source
 
-    // Dohvaćanje naslova i poveznice članka.
-    $link = $article->find('h2.entry-title a')[0];
-    $link_url = $link->href;
-    $link_name = $link->plaintext;
-
-    // Dohvaćanje HTML sadržaja poveznice.
-    $link_html = file_get_html($link_url);
+    $link = $article->find('h2.entry-title a')[0]; //Nalazimo link i istovremeno uzimamo naziv rada
+    $html = file_get_html($link->href); //Otvaramo link
     $htmlContent = "";
-    foreach ($link_html->find('.post-content') as $linkText) {
-        $htmlContent .= $linkText->plaintext;
+    foreach ($html->find('.post-content') as $linkText) 
+    {
+        $htmlContent .= $linkText->plaintext;//Nakon što smo ušli u link uzimamo tekst
     }
-
-    // Priprema podataka za novi rad.
-    $oib = preg_replace('/[^0-9]/', '', $image_source);
-
+    //Sve to stavljamo u polje
     $diplomski_rad = array(
-        'naziv_rada' => $link_name,
-        'tekst_rada' => $htmlContent,
-        'link_rada' => $link_url,
-        'oib_tvrtke' => $oib
-    );
+            'naziv_rada' => $link->plaintext,
+            'tekst_rada' => $htmlContent,
+            'link_rada' => $link->href,
+            'oib_tvrtke' => preg_replace('/[^0-9]/', '', $image_source)
+        );
 
-    // Kreiranje i spremanje novog rada koristeći klasu DiplomskiRadovi.
     $novi_rad = new DiplomskiRadovi($diplomski_rad);
     $novi_rad->save();
 }
